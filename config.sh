@@ -115,7 +115,9 @@ echo
 check_network
 if [[ $? = 1 ]]; then
     echo "Setting up wireless network"
-    kill `pidof dhcpcd` `pidof wpa_supplicant`
+    PIDS_1=`pidof dhcpcd`
+    PIDS_2=`pidof wpa_supplicant`
+    [[ -n $PIDS_1 || -n $PIDS_2 ]] && kill $PIDS_1 $PIDS_2  # make sure there is no wpa_supplicant or dhcpcd running
     WL_INTERFACE=`iw dev | grep Interface | cut -d" " -f 2`
     ip link set $WL_INTERFACE up
     echo -e "\tFollowing APs with strong signals are found:"
@@ -137,11 +139,17 @@ fi
 echo
 cecho cyan "[Time zone && Locale && hostname]"
 echo
+
+# time zone
 rm /etc/localtime
 ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 hwclock --systohc
+# locale
 sed -i -e "s/^#\(en_US.UTF-8 UTF-8\)/\1/" /etc/locale.gen
+locale-gen
 echo "LANG=en_US.UTF-8" > /etc/locale.conf
+
+# hostname
 echo t460p > /etc/hostname
 
 
@@ -194,7 +202,7 @@ EOL
 #---------------------------
 font="iso02-12x22"
 setfont $font
-echo "FONT=${font}" > /etc/vconsole.conf
+echo "FONT=${font}" > /etc/vconsole.conf   # this might distort other ttys, use back to default one, just enter `setfont`
 
 #---------------------------
 # Install base-devel package
